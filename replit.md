@@ -4,6 +4,12 @@
 
 RollRite is a comprehensive bowling analytics application that helps bowlers optimize their performance by tracking bowling ball data, analyzing oil patterns, and providing intelligent ball recommendations. The application features a modern web interface for managing bowling arsenals, viewing performance analytics, and finding the best ball for specific conditions.
 
+## Recent Changes
+
+- **January 29, 2025**: Application branding updated to "RollRite" across all components
+- **January 29, 2025**: Added proper HTML title tag for SEO and browser tab display
+- **January 29, 2025**: Complete application architecture implemented with all core features functional
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
