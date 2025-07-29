@@ -43,12 +43,12 @@ export default function OilPatterns() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-charcoal mb-2">Oil Pattern Library</h1>
-          <p className="text-gray-600">Browse professional oil patterns and create custom patterns</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-charcoal mb-2">Oil Pattern Library</h1>
+          <p className="text-sm md:text-base text-gray-600">Browse professional oil patterns and create custom patterns</p>
         </div>
-        <Button className="bg-bowling-blue hover:bg-blue-800 text-white">
+        <Button className="bg-bowling-blue hover:bg-blue-800 text-white w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Custom Pattern
         </Button>
@@ -73,7 +73,7 @@ export default function OilPatterns() {
       </div>
 
       {/* Pattern Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {filteredPatterns?.map((pattern: OilPattern) => (
           <PatternCard key={pattern.id} pattern={pattern} />
         ))}

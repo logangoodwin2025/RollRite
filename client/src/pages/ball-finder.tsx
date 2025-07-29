@@ -59,14 +59,14 @@ export default function BallFinder() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-charcoal mb-2">Find Best Ball</h1>
-        <p className="text-gray-600">Get personalized ball recommendations based on your style and lane conditions</p>
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-charcoal mb-2">Find Best Ball</h1>
+        <p className="text-sm md:text-base text-gray-600">Get personalized ball recommendations based on your style and lane conditions</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Input Parameters */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-4 md:space-y-6">
           {/* Oil Pattern Selection */}
           <Card>
             <CardHeader>
@@ -177,7 +177,7 @@ export default function BallFinder() {
           <Button 
             onClick={handleAnalysis}
             disabled={!selectedPatternId || !playingStyle || recommendBalls.isPending}
-            className="w-full bg-bowling-blue hover:bg-blue-800 text-white font-semibold py-4 px-6"
+            className="w-full bg-bowling-blue hover:bg-blue-800 text-white font-semibold py-3 md:py-4 px-4 md:px-6 text-sm md:text-base"
           >
             <Search className="h-4 w-4 mr-2" />
             {recommendBalls.isPending ? "Analyzing..." : "Run Ball Analysis"}

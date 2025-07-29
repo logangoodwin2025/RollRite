@@ -39,17 +39,17 @@ export function PatternCard({ pattern }: PatternCardProps) {
 
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-4">
+      <CardContent className="p-4 md:p-6">
+        <div className="flex justify-between items-start mb-3 md:mb-4">
           <div>
-            <h3 className="text-xl font-semibold text-charcoal">{pattern.name}</h3>
-            <Badge className={`mt-1 ${getCategoryColor(pattern.category)}`}>
+            <h3 className="text-lg md:text-xl font-semibold text-charcoal">{pattern.name}</h3>
+            <Badge className={`mt-1 text-xs ${getCategoryColor(pattern.category)}`}>
               {pattern.category.toUpperCase()}
             </Badge>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-bowling-blue">{pattern.length}ft</div>
-            <div className="text-sm text-gray-600">Length</div>
+            <div className="text-xl md:text-2xl font-bold text-bowling-blue">{pattern.length}ft</div>
+            <div className="text-xs md:text-sm text-gray-600">Length</div>
           </div>
         </div>
         
@@ -62,7 +62,7 @@ export function PatternCard({ pattern }: PatternCardProps) {
           </div>
         </div>
         
-        <div className="space-y-2 text-sm mb-4">
+        <div className="space-y-2 text-xs md:text-sm mb-3 md:mb-4">
           <div className="flex justify-between">
             <span className="text-gray-600">Volume:</span>
             <span className="font-medium">{pattern.volume} mL</span>
@@ -80,15 +80,15 @@ export function PatternCard({ pattern }: PatternCardProps) {
         </div>
         
         {pattern.description && (
-          <p className="text-sm text-gray-600 mb-4">{pattern.description}</p>
+          <p className="text-xs md:text-sm text-gray-600 mb-3 md:mb-4">{pattern.description}</p>
         )}
         
-        <div className="flex space-x-2">
-          <Button variant="outline" className="flex-1">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" className="flex-1 text-sm">
             View Details
           </Button>
           {pattern.isCustom === "true" && (
-            <Button variant="outline" className="text-pin-red hover:text-red-700">
+            <Button variant="outline" className="text-pin-red hover:text-red-700 text-sm">
               Delete
             </Button>
           )}
