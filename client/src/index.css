@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --background: hsl(248, 50%, 98%);
+  --foreground: hsl(215, 14%, 12%);
+  --muted: hsl(210, 40%, 96%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(215, 14%, 12%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(215, 14%, 12%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --primary: hsl(221, 83%, 32%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(210, 40%, 96%);
+  --secondary-foreground: hsl(222, 84%, 5%);
+  --accent: hsl(210, 40%, 96%);
+  --accent-foreground: hsl(222, 84%, 5%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --success: hsl(142, 76%, 36%);
+  --warning: hsl(38, 92%, 50%);
+  --pin-red: hsl(0, 74%, 50%);
+  --ring: hsl(215, 14%, 12%);
+  --radius: 0.5rem;
+  
+  /* Bowling specific colors */
+  --bowling-blue: hsl(221, 83%, 32%);
+  --amber-accent: hsl(38, 92%, 50%);
+  --light-bg: hsl(210, 40%, 98%);
+  --charcoal: hsl(215, 14%, 12%);
+  --success-green: hsl(142, 76%, 36%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(221, 83%, 32%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-inter antialiased bg-light-bg text-charcoal;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .bg-bowling-blue {
+    background-color: var(--bowling-blue);
+  }
+  
+  .text-bowling-blue {
+    color: var(--bowling-blue);
+  }
+  
+  .border-bowling-blue {
+    border-color: var(--bowling-blue);
+  }
+  
+  .bg-pin-red {
+    background-color: var(--pin-red);
+  }
+  
+  .text-pin-red {
+    color: var(--pin-red);
+  }
+  
+  .bg-amber-accent {
+    background-color: var(--amber-accent);
+  }
+  
+  .text-amber-accent {
+    color: var(--amber-accent);
+  }
+  
+  .bg-light-bg {
+    background-color: var(--light-bg);
+  }
+  
+  .text-charcoal {
+    color: var(--charcoal);
+  }
+  
+  .bg-success-green {
+    background-color: var(--success-green);
+  }
+  
+  .text-success-green {
+    color: var(--success-green);
+  }
+  
+  .font-inter {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
