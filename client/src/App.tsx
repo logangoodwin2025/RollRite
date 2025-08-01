@@ -8,6 +8,11 @@ import Dashboard from "@/pages/dashboard";
 import BallFinder from "@/pages/ball-finder";
 import Arsenal from "@/pages/arsenal";
 import OilPatterns from "@/pages/oil-patterns";
+import AddPerformance from "@/pages/add-performance";
+import LoginPage from "@/pages/login";
+import RegisterPage from "@/pages/register";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,22 +22,31 @@ function Router() {
       <Route path="/ball-finder" component={BallFinder} />
       <Route path="/arsenal" component={Arsenal} />
       <Route path="/oil-patterns" component={OilPatterns} />
+      <Route path="/add-performance" component={AddPerformance} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/register" component={RegisterPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
+import { AuthProvider } from "./hooks/use-auth";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-light-bg">
-          <Navigation />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-            <Router />
-          </main>
-        </div>
-        <Toaster />
+        <AuthProvider>
+          <div className="min-h-screen bg-light-bg">
+            <Navigation />
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+              <Router />
+            </main>
+          </div>
+          <Toaster />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

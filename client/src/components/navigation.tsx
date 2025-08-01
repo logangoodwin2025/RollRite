@@ -1,24 +1,37 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Zap, Search, List, Map, BarChart3 } from "lucide-react";
+import { Menu, X, Zap, Search, List, Map, BarChart3, Plus, LogIn, LogOut, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/use-auth";
 
 export function Navigation() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuth();
 
-  const navItems = [
-    { href: "/", label: "Dashboard", icon: BarChart3 },
-    { href: "/ball-finder", label: "Find Best Ball", icon: Search },
-    { href: "/arsenal", label: "My Arsenal", icon: List },
-    { href: "/oil-patterns", label: "Oil Patterns", icon: Map },
-  ];
+  const navItems = user
+    ? [
+        { href: "/", label: "Dashboard", icon: BarChart3 },
+        { href: "/ball-finder", label: "Find Best Ball", icon: Search },
+        { href: "/arsenal", label: "My Arsenal", icon: List },
+        { href: "/oil-patterns", label: "Oil Patterns", icon: Map },
+        { href: "/add-performance", label: "Add Game", icon: Plus },
+      ]
+    : [
+        { href: "/login", label: "Login", icon: LogIn },
+        { href: "/register", label: "Register", icon: UserPlus },
+      ];
 
   const isActive = (href: string) => {
     if (href === "/" && location === "/") return true;
     if (href !== "/" && location.startsWith(href)) return true;
     return false;
+  };
+
+  const handleLogout = () => {
+    logout();
+    setLocation('/login');
   };
 
   return (
@@ -36,7 +49,7 @@ export function Navigation() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-6">
+          <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -54,6 +67,12 @@ export function Navigation() {
                 </Link>
               );
             })}
+            {user && (
+              <Button onClick={handleLogout} variant="ghost" size="sm" className="text-white hover:bg-blue-800">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            )}
           </div>
 
           {/* Mobile Navigation */}
@@ -84,6 +103,12 @@ export function Navigation() {
                       </Link>
                     );
                   })}
+                  {user && (
+                    <Button onClick={() => { handleLogout(); setIsOpen(false); }} variant="ghost" className="w-full justify-start text-white hover:bg-blue-800 mt-4">
+                      <LogOut className="h-5 w-5 mr-3" />
+                      Logout
+                    </Button>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
