@@ -1,12 +1,125 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { 
+import {
   insertBowlingBallSchema,
   insertOilPatternSchema,
   insertPerformanceDataSchema,
-  insertBowlerSpecsSchema
+  insertBowlerSpecsSchema,
+  type BowlingBall,
+  type OilPattern,
+  type BowlerSpecs,
 } from "@shared/schema";
+
+// Ball recommendation helper function
+function calculateMatchScore(
+  ball: BowlingBall,
+  pattern: OilPattern,
+  specs: BowlerSpecs,
+): { matchScore: number; reason: string } {
+  let score = 100;
+  const reasons: string[] = [];
+
+  // Oil Pattern Length vs. Hook Potential
+  const patternLength = pattern.length;
+  if (patternLength >= 42) {
+    // Long pattern
+    if (ball.hookPotential === "low") {
+      score -= 30;
+      reasons.push("Low hook on a long pattern is not ideal.");
+    } else if (ball.hookPotential === "medium") {
+      score -= 10;
+      reasons.push(
+        "Medium hook is acceptable, but high hook is preferred on long patterns.",
+      );
+    }
+  } else if (patternLength <= 36) {
+    // Short pattern
+    if (ball.hookPotential === "high") {
+      score -= 25;
+      reasons.push("High hook on a short pattern can be unpredictable.");
+    } else if (ball.hookPotential === "medium") {
+      score -= 10;
+      reasons.push(
+        "Medium hook is usable, but low hook is often better on short patterns.",
+      );
+    }
+  }
+
+  // Oil Volume vs. Coverstock Type
+  const oilVolume = parseFloat(pattern.volume);
+  if (oilVolume > 25) {
+    // Heavy oil
+    if (ball.coverstockType === "plastic") {
+      score -= 50;
+      reasons.push("Plastic balls are unsuitable for heavy oil.");
+    } else if (ball.coverstockType === "urethane") {
+      score -= 20;
+      reasons.push("Urethane may struggle on very heavy oil.");
+    }
+  } else if (oilVolume < 20) {
+    // Light oil
+    if (ball.coverstockType === "reactive" && ball.surface.includes("Dull")) {
+      score -= 20;
+      reasons.push(
+        "A dull reactive ball might read the lane too early on light oil.",
+      );
+    }
+  }
+
+  // Bowler's Rev Rate vs. Core Type
+  if (specs.revRate > 400) {
+    // High rev rate
+    if (ball.coreType === "asymmetrical") {
+      score -= 10;
+      reasons.push(
+        "High-rev players might find asymmetrical cores too aggressive.",
+      );
+    }
+  } else if (specs.revRate < 300) {
+    // Low rev rate
+    if (ball.coreType === "symmetrical" && ball.hookPotential === "low") {
+      score -= 20;
+      reasons.push("Low-rev players may need a stronger core to generate hook.");
+    }
+  }
+
+  // Bowler's Speed vs. Hook Potential
+  if (specs.speed > 18) {
+    // High speed
+    if (ball.hookPotential === "low") {
+      score -= 25;
+      reasons.push("High-speed players need more hook potential.");
+    }
+  } else if (specs.speed < 16) {
+    // Low speed
+    if (ball.hookPotential === "high") {
+      score -= 15;
+      reasons.push("Low-speed players might find high hook balls over-reactive.");
+    }
+  }
+
+  // Playing Style vs. Ball Reaction
+  if (specs.playingStyle === "stroker" && ball.hookPotential === "high") {
+    score -= 10;
+    reasons.push(
+      "Strokers often prefer a more controlled reaction than high-hook balls provide.",
+    );
+  }
+  if (specs.playingStyle === "cranker" && ball.hookPotential === "low") {
+    score -= 20;
+    reasons.push(
+      "Crankers usually need more hook potential than this ball offers.",
+    );
+  }
+
+  const reason =
+    reasons.length > 0
+      ? reasons.join(" ")
+      : "A solid choice for this pattern and your style.";
+
+  return { matchScore: Math.max(0, score), reason };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Bowling Balls routes
@@ -117,10 +230,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ball recommendation endpoint
   app.post("/api/recommend-balls", async (req, res) => {
     try {
-      const { patternId, bowlerSpecs } = req.body;
-      
-      if (!patternId || !bowlerSpecs) {
-        return res.status(400).json({ message: "Pattern ID and bowler specs are required" });
+      const { patternId, bowlerSpecs, userId } = req.body;
+
+      if (!patternId || !bowlerSpecs || !userId) {
+        return res
+          .status(400)
+          .json({
+            message: "Pattern ID, bowler specs, and user ID are required",
+          });
       }
 
       const pattern = await storage.getOilPattern(patternId);
@@ -128,39 +245,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Oil pattern not found" });
       }
 
-      // Simplified ball recommendation algorithm
-      const recommendations = [
-        {
-          name: "Storm Phaze II",
-          brand: "Storm",
-          matchScore: 94,
-          hookPotential: "high",
-          suggestedSurface: "2000 Abralon",
-          entryAngle: 4.8,
-          reason: "Excellent for medium-heavy oil with high rev rate players"
-        },
-        {
-          name: "Hammer Obsession",
-          brand: "Hammer",
-          matchScore: 87,
-          hookPotential: "medium-high",
-          suggestedSurface: "1500 Grit",
-          entryAngle: 4.2,
-          reason: "Solid reactive ball great for consistent reaction"
-        },
-        {
-          name: "Roto Grip Idol",
-          brand: "Roto Grip",
-          matchScore: 82,
-          hookPotential: "medium",
-          suggestedSurface: "3000 Abralon",
-          entryAngle: 3.9,
-          reason: "Versatile ball that works on various conditions"
-        }
-      ];
+      const userBalls = await storage.getBowlingBalls(userId);
+      if (!userBalls || userBalls.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "No bowling balls found for this user." });
+      }
+
+      const recommendations = userBalls.map((ball) => {
+        const { matchScore, reason } = calculateMatchScore(
+          ball,
+          pattern,
+          bowlerSpecs,
+        );
+        return {
+          ...ball,
+          matchScore,
+          reason,
+        };
+      });
+
+      recommendations.sort((a, b) => b.matchScore - a.matchScore);
 
       res.json(recommendations);
     } catch (error) {
+      if (error instanceof Error) {
+        console.error(error.message);
+        return res
+          .status(500)
+          .json({
+            message: "Failed to generate recommendations",
+            error: error.message,
+          });
+      }
       res.status(500).json({ message: "Failed to generate recommendations" });
     }
   });

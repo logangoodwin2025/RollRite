@@ -1,76 +1,103 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Target, RotateCcw, Trophy, Zap, BarChart3 } from "lucide-react";
+import { format } from "date-fns";
+import type { PerformanceData, BowlingBall, OilPattern } from "../../shared/schema";
 
 // Mock user ID for demo purposes
-const DEMO_USER_ID = "demo-user";
+const DEMO_USER_ID = "test-user-1";
 
 const COLORS = ['hsl(221, 83%, 32%)', 'hsl(0, 74%, 50%)', 'hsl(38, 92%, 50%)', 'hsl(142, 76%, 36%)'];
 
 export default function Dashboard() {
-  const { data: performanceData, isLoading: performanceLoading } = useQuery({
+  const { data: performanceData, isLoading: performanceLoading } = useQuery<PerformanceData[]>({
     queryKey: ["/api/performance", DEMO_USER_ID],
-    enabled: !!DEMO_USER_ID,
+    queryFn: () => fetch(`/api/performance/${DEMO_USER_ID}`).then((res) => res.json()),
   });
 
-  const { data: balls, isLoading: ballsLoading } = useQuery({
+  const { data: balls, isLoading: ballsLoading } = useQuery<BowlingBall[]>({
     queryKey: ["/api/balls", DEMO_USER_ID],
-    enabled: !!DEMO_USER_ID,
+    queryFn: () => fetch(`/api/balls/${DEMO_USER_ID}`).then((res) => res.json()),
   });
 
-  // Mock data for charts since we don't have real performance data yet
-  const scoreData = [
-    { week: 'W1', score: 195 },
-    { week: 'W2', score: 202 },
-    { week: 'W3', score: 198 },
-    { week: 'W4', score: 205 },
-    { week: 'W5', score: 210 },
-    { week: 'W6', score: 208 },
-    { week: 'W7', score: 215 },
-    { week: 'W8', score: 212 },
-    { week: 'W9', score: 218 },
-    { week: 'W10', score: 220 },
-    { week: 'W11', score: 216 },
-    { week: 'W12', score: 222 },
-  ];
+  const { data: patterns, isLoading: patternsLoading } = useQuery<OilPattern[]>({
+    queryKey: ["/api/patterns"],
+    queryFn: () => fetch("/api/patterns").then((res) => res.json()),
+  });
 
-  const ballUsageData = [
-    { name: 'Storm Phaze II', value: 25, games: 89 },
-    { name: 'Hammer Obsession', value: 18.5, games: 156 },
-    { name: 'Roto Grip Idol', value: 12.5, games: 67 },
-    { name: 'Other', value: 44, games: 30 },
-  ];
-
-  const recentGames = [
-    {
-      date: "Jan 28, 2025",
-      venue: "Strike Zone Lanes",
-      pattern: "PBA Shark (39ft)",
-      ball: "Storm Phaze II",
-      score: 218,
-      carry: 91.2
-    },
-    {
-      date: "Jan 26, 2025",
-      venue: "Championship Bowling",
-      pattern: "WTBA Beijing (37ft)",
-      ball: "Hammer Obsession",
-      score: 198,
-      carry: 84.6
-    },
-    {
-      date: "Jan 24, 2025",
-      venue: "Pro Bowl Center",
-      pattern: "Kegel Main Street (40ft)",
-      ball: "Roto Grip Idol",
-      score: 215,
-      carry: 88.9
+  const stats = useMemo(() => {
+    if (!performanceData || performanceData.length === 0) {
+      return {
+        averageScore: 0,
+        carryPercentage: 0,
+        entryAngle: 0,
+        gamesPlayed: 0,
+        scoreData: [],
+        ballUsageData: [],
+        recentGames: [],
+      };
     }
-  ];
 
-  if (performanceLoading || ballsLoading) {
+    const gamesPlayed = performanceData.length;
+    const averageScore = performanceData.reduce((acc, game) => acc + game.score, 0) / gamesPlayed;
+    const carryPercentage = performanceData.reduce((acc, game) => acc + parseFloat(String(game.carryPercentage)), 0) / gamesPlayed;
+    const entryAngle = performanceData.reduce((acc, game) => acc + parseFloat(String(game.entryAngle)), 0) / gamesPlayed;
+
+    const scoreData = performanceData
+      .slice()
+      .sort((a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime())
+      .slice(-12)
+      .map(game => ({
+        date: format(new Date(game.gameDate), "MMM d"),
+        score: game.score,
+      }));
+
+    const ballUsage = performanceData.reduce((acc, game) => {
+      acc[game.ballId] = (acc[game.ballId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const ballUsageData = Object.entries(ballUsage).map(([ballId, count]) => {
+      const ball = balls?.find(b => b.id === ballId);
+      return {
+        name: ball?.name || "Unknown Ball",
+        value: (count / gamesPlayed) * 100,
+        games: count,
+      };
+    });
+
+    const recentGames = performanceData
+      .slice()
+      .sort((a, b) => new Date(b.gameDate).getTime() - new Date(a.gameDate).getTime())
+      .slice(0, 5)
+      .map(game => {
+        const ball = balls?.find(b => b.id === game.ballId);
+        const pattern = patterns?.find(p => p.id === game.patternId);
+        return {
+          date: format(new Date(game.gameDate), "MMM d, yyyy"),
+          venue: game.venue,
+          pattern: pattern?.name || "Unknown Pattern",
+          ball: ball?.name || "Unknown Ball",
+          score: game.score,
+          carry: parseFloat(String(game.carryPercentage)),
+        }
+      });
+
+    return {
+      averageScore,
+      carryPercentage,
+      entryAngle,
+      gamesPlayed,
+      scoreData,
+      ballUsageData,
+      recentGames,
+    };
+  }, [performanceData, balls, patterns]);
+
+  if (performanceLoading || ballsLoading || patternsLoading) {
     return (
       <div className="space-y-8">
         <div>
@@ -101,12 +128,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between h-full">
               <div className="flex-1">
                 <p className="text-xs md:text-sm font-medium text-gray-600 mb-1">Average Score</p>
-                <p className="text-xl md:text-3xl font-bold text-charcoal mb-1 md:mb-0">204</p>
-                <p className="text-xs md:text-sm text-success-green flex items-center">
-                  <TrendingUp className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                  <span className="hidden md:inline">+8.5 from last month</span>
-                  <span className="md:hidden">+8.5</span>
-                </p>
+                <p className="text-xl md:text-3xl font-bold text-charcoal mb-1 md:mb-0">{stats.averageScore.toFixed(0)}</p>
               </div>
               <Zap className="hidden md:block h-10 w-10 text-success-green opacity-20" />
             </div>
@@ -118,12 +140,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between h-full">
               <div className="flex-1">
                 <p className="text-xs md:text-sm font-medium text-gray-600 mb-1">Carry Percentage</p>
-                <p className="text-xl md:text-3xl font-bold text-charcoal mb-1 md:mb-0">87.2%</p>
-                <p className="text-xs md:text-sm text-amber-accent flex items-center">
-                  <TrendingUp className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                  <span className="hidden md:inline">+2.1% this week</span>
-                  <span className="md:hidden">+2.1%</span>
-                </p>
+                <p className="text-xl md:text-3xl font-bold text-charcoal mb-1 md:mb-0">{stats.carryPercentage.toFixed(1)}%</p>
               </div>
               <Target className="hidden md:block h-10 w-10 text-amber-accent opacity-20" />
             </div>
@@ -135,12 +152,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between h-full">
               <div className="flex-1">
                 <p className="text-xs md:text-sm font-medium text-gray-600 mb-1">Entry Angle</p>
-                <p className="text-xl md:text-3xl font-bold text-charcoal mb-1 md:mb-0">4.8°</p>
-                <p className="text-xs md:text-sm text-bowling-blue flex items-center">
-                  <RotateCcw className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                  <span className="hidden md:inline">Consistent</span>
-                  <span className="md:hidden">Good</span>
-                </p>
+                <p className="text-xl md:text-3xl font-bold text-charcoal mb-1 md:mb-0">{stats.entryAngle.toFixed(1)}°</p>
               </div>
               <RotateCcw className="hidden md:block h-10 w-10 text-bowling-blue opacity-20" />
             </div>
@@ -152,12 +164,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between h-full">
               <div className="flex-1">
                 <p className="text-xs md:text-sm font-medium text-gray-600 mb-1">Games Played</p>
-                <p className="text-xl md:text-3xl font-bold text-charcoal mb-1 md:mb-0">342</p>
-                <p className="text-xs md:text-sm text-pin-red flex items-center">
-                  <Trophy className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                  <span className="hidden md:inline">This season</span>
-                  <span className="md:hidden">Season</span>
-                </p>
+                <p className="text-xl md:text-3xl font-bold text-charcoal mb-1 md:mb-0">{stats.gamesPlayed}</p>
               </div>
               <Trophy className="hidden md:block h-10 w-10 text-pin-red opacity-20" />
             </div>
@@ -172,16 +179,16 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center text-lg md:text-xl">
               <BarChart3 className="h-5 w-5 text-bowling-blue mr-2" />
-              Score Trend (Last 12 Weeks)
+              Score Trend (Last 12 Games)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={scoreData}>
+                <LineChart data={stats.scoreData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="week" />
-                  <YAxis domain={[180, 230]} />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[100, 300]} />
                   <Tooltip />
                   <Line 
                     type="monotone" 
@@ -210,7 +217,7 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={ballUsageData}
+                      data={stats.ballUsageData}
                       cx="50%"
                       cy="50%"
                       innerRadius={30}
@@ -218,16 +225,16 @@ export default function Dashboard() {
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {ballUsageData.map((entry, index) => (
+                      {stats.ballUsageData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => `${value}%`} />
+                    <Tooltip formatter={(value) => `${(value as number).toFixed(1)}%`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
               <div className="w-full md:w-1/2 space-y-2 md:space-y-3 mt-4 md:mt-0">
-                {ballUsageData.map((entry, index) => (
+                {stats.ballUsageData.map((entry, index) => (
                   <div key={entry.name} className="flex items-center">
                     <div 
                       className="w-3 h-3 md:w-4 md:h-4 rounded mr-2 md:mr-3" 
@@ -235,7 +242,7 @@ export default function Dashboard() {
                     />
                     <div className="text-xs md:text-sm">
                       <div className="font-medium">{entry.name}</div>
-                      <div className="text-gray-500">{entry.value}%</div>
+                      <div className="text-gray-500">{entry.value.toFixed(1)}% ({entry.games} games)</div>
                     </div>
                   </div>
                 ))}
@@ -256,7 +263,7 @@ export default function Dashboard() {
         <CardContent>
           {/* Mobile Cards View */}
           <div className="block md:hidden space-y-4">
-            {recentGames.map((game, index) => (
+            {stats.recentGames.map((game, index) => (
               <div key={index} className="bg-gray-50 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="text-sm font-medium text-charcoal">{game.date}</div>
@@ -286,7 +293,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentGames.map((game, index) => (
+                {stats.recentGames.map((game, index) => (
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal">{game.date}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal">{game.venue}</td>

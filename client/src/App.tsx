@@ -8,6 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import BallFinder from "@/pages/ball-finder";
 import Arsenal from "@/pages/arsenal";
 import OilPatterns from "@/pages/oil-patterns";
+import AddPerformance from "@/pages/add-performance";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/ball-finder" component={BallFinder} />
       <Route path="/arsenal" component={Arsenal} />
       <Route path="/oil-patterns" component={OilPatterns} />
+      <Route path="/add-performance" component={AddPerformance} />
       <Route component={NotFound} />
     </Switch>
   );

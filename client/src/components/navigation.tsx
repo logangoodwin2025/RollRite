@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Zap, Search, List, Map, BarChart3 } from "lucide-react";
+import { Menu, X, Zap, Search, List, Map, BarChart3, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -13,6 +13,7 @@ export function Navigation() {
     { href: "/ball-finder", label: "Find Best Ball", icon: Search },
     { href: "/arsenal", label: "My Arsenal", icon: List },
     { href: "/oil-patterns", label: "Oil Patterns", icon: Map },
+    { href: "/add-performance", label: "Add Game", icon: Plus },
   ];
 
   const isActive = (href: string) => {
