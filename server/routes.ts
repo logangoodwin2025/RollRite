@@ -11,7 +11,7 @@ import {
   type BowlingBall,
   type OilPattern,
   type BowlerSpecs,
-} from "@shared/schema";
+} from "../shared/schema";
 import { hashPassword, comparePassword, generateToken } from "./auth";
 import { authMiddleware, type AuthRequest } from "./middleware";
 
@@ -22,6 +22,108 @@ function calculateMatchScore(
   specs: BowlerSpecs,
 ): { matchScore: number; reason: string } {
   // ... (same as before)
+  let score = 100;
+  const reasons: string[] = [];
+
+  // Oil Pattern Length vs. Hook Potential
+  const patternLength = pattern.length;
+  if (patternLength >= 42) {
+    // Long pattern
+    if (ball.hookPotential === "low") {
+      score -= 30;
+      reasons.push("Low hook on a long pattern is not ideal.");
+    } else if (ball.hookPotential === "medium") {
+      score -= 10;
+      reasons.push(
+        "Medium hook is acceptable, but high hook is preferred on long patterns.",
+      );
+    }
+  } else if (patternLength <= 36) {
+    // Short pattern
+    if (ball.hookPotential === "high") {
+      score -= 25;
+      reasons.push("High hook on a short pattern can be unpredictable.");
+    } else if (ball.hookPotential === "medium") {
+      score -= 10;
+      reasons.push(
+        "Medium hook is usable, but low hook is often better on short patterns.",
+      );
+    }
+  }
+
+  // Oil Volume vs. Coverstock Type
+  const oilVolume = parseFloat(String(pattern.volume));
+  if (oilVolume > 25) {
+    // Heavy oil
+    if (ball.coverstockType === "plastic") {
+      score -= 50;
+      reasons.push("Plastic balls are unsuitable for heavy oil.");
+    } else if (ball.coverstockType === "urethane") {
+      score -= 20;
+      reasons.push("Urethane may struggle on very heavy oil.");
+    }
+  } else if (oilVolume < 20) {
+    // Light oil
+    if (ball.coverstockType === "reactive" && ball.surface.includes("Dull")) {
+      score -= 20;
+      reasons.push(
+        "A dull reactive ball might read the lane too early on light oil.",
+      );
+    }
+  }
+
+  // Bowler's Rev Rate vs. Core Type
+  if (specs.revRate > 400) {
+    // High rev rate
+    if (ball.coreType === "asymmetrical") {
+      score -= 10;
+      reasons.push(
+        "High-rev players might find asymmetrical cores too aggressive.",
+      );
+    }
+  } else if (specs.revRate < 300) {
+    // Low rev rate
+    if (ball.coreType === "symmetrical" && ball.hookPotential === "low") {
+      score -= 20;
+      reasons.push("Low-rev players may need a stronger core to generate hook.");
+    }
+  }
+
+  // Bowler's Speed vs. Hook Potential
+  if (specs.speed > 18) {
+    // High speed
+    if (ball.hookPotential === "low") {
+      score -= 25;
+      reasons.push("High-speed players need more hook potential.");
+    }
+  } else if (specs.speed < 16) {
+    // Low speed
+    if (ball.hookPotential === "high") {
+      score -= 15;
+      reasons.push("Low-speed players might find high hook balls over-reactive.");
+    }
+  }
+
+  // Playing Style vs. Ball Reaction
+  if (specs.playingStyle === "stroker" && ball.hookPotential === "high") {
+    score -= 10;
+    reasons.push(
+      "Strokers often prefer a more controlled reaction than high-hook balls provide.",
+    );
+  }
+  if (specs.playingStyle === "cranker" && ball.hookPotential === "low") {
+    score -= 20;
+    reasons.push(
+      "Crankers usually need more hook potential than this ball offers.",
+    );
+  }
+
+  const reason =
+    reasons.length > 0
+      ? reasons.join(" ")
+      : "A solid choice for this pattern and your style.";
+
+  return { matchScore: Math.max(0, score), reason };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {

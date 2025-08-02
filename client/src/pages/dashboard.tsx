@@ -300,7 +300,7 @@ export default function Dashboard() {
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal">{game.date}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal">{game.venue}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal">{game.pattern}</td>
+                    <td className="px-6 py-4 whitespace-now_req.userId!rap text-sm text-charcoal">{game.pattern}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal">{game.ball}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-success-green">{game.score}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-charcoal">{game.carry}%</td>

@@ -14,6 +14,7 @@ import RegisterPage from "@/pages/register";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
+import { AuthProvider } from "./hooks/use-auth";
 
 function Router() {
   return (
@@ -31,8 +32,6 @@ function Router() {
     </Switch>
   );
 }
-
-import { AuthProvider } from "./hooks/use-auth";
 
 function App() {
   return (
