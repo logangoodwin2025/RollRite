@@ -7,6 +7,10 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").notNull().default("end user"), // 'admin' or 'end user'
+  subscription: text("subscription").notNull().default("free"), // 'free' or 'premium'
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
 export const bowlingBalls = pgTable("bowling_balls", {
@@ -63,6 +67,8 @@ export const bowlerSpecs = pgTable("bowler_specs", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  role: true,
+  subscription: true,
 });
 
 export const insertBowlingBallSchema = createInsertSchema(bowlingBalls).omit({

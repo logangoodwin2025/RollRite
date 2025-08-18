@@ -15,8 +15,9 @@ export default function Arsenal() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: balls, isLoading } = useQuery({
+  const { data: balls, isLoading } = useQuery<BowlingBall[]>({
     queryKey: ["/api/balls", DEMO_USER_ID],
+    queryFn: () => fetch(`/api/balls/${DEMO_USER_ID}`).then((res) => res.json()),
     enabled: !!DEMO_USER_ID,
   });
 

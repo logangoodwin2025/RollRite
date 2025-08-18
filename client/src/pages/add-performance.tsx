@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import type { BowlingBall, OilPattern, InsertPerformanceData } from "../../shared/schema";
+import { useToast } from "@/components/ui/use-toast";
+import type { BowlingBall, OilPattern, InsertPerformanceData } from "@shared/schema";
 
 // Mock user ID for demo purposes
 const DEMO_USER_ID = "test-user-1";

@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { isAuthenticated, isAdmin, isSubscribed } from "./auth";
 import {
   insertBowlingBallSchema,
   insertOilPatternSchema,
@@ -123,7 +124,7 @@ function calculateMatchScore(
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Bowling Balls routes
-  app.get("/api/balls/:userId", async (req, res) => {
+  app.get("/api/balls/:userId", isAuthenticated, async (req, res) => {
     try {
       const balls = await storage.getBowlingBalls(req.params.userId);
       res.json(balls);
@@ -132,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/balls", async (req, res) => {
+  app.post("/api/balls", isAuthenticated, async (req, res) => {
     try {
       const ballData = insertBowlingBallSchema.parse(req.body);
       const ball = await storage.createBowlingBall(ballData);
@@ -142,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/balls/:id", async (req, res) => {
+  app.put("/api/balls/:id", isAuthenticated, async (req, res) => {
     try {
       const updates = req.body;
       const ball = await storage.updateBowlingBall(req.params.id, updates);
@@ -155,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/balls/:id", async (req, res) => {
+  app.delete("/api/balls/:id", isAuthenticated, async (req, res) => {
     try {
       const success = await storage.deleteBowlingBall(req.params.id);
       if (!success) {
@@ -177,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/patterns", async (req, res) => {
+  app.post("/api/patterns", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const patternData = insertOilPatternSchema.parse(req.body);
       const pattern = await storage.createOilPattern(patternData);
@@ -188,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Performance Data routes
-  app.get("/api/performance/:userId", async (req, res) => {
+  app.get("/api/performance/:userId", isAuthenticated, async (req, res) => {
     try {
       const performance = await storage.getPerformanceData(req.params.userId);
       res.json(performance);
@@ -197,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/performance", async (req, res) => {
+  app.post("/api/performance", isAuthenticated, async (req, res) => {
     try {
       const performanceData = insertPerformanceDataSchema.parse(req.body);
       const data = await storage.createPerformanceData(performanceData);
@@ -208,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bowler Specs routes
-  app.get("/api/bowler-specs/:userId", async (req, res) => {
+  app.get("/api/bowler-specs/:userId", isAuthenticated, async (req, res) => {
     try {
       const specs = await storage.getBowlerSpecs(req.params.userId);
       res.json(specs || null);
@@ -217,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/bowler-specs", async (req, res) => {
+  app.post("/api/bowler-specs", isAuthenticated, async (req, res) => {
     try {
       const specsData = insertBowlerSpecsSchema.parse(req.body);
       const specs = await storage.createOrUpdateBowlerSpecs(specsData);
@@ -227,8 +228,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auth routes
+  app.post("/api/register", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      const user = await storage.createUser({ username, password });
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to login after registration" });
+        }
+        res.json({ message: "Registered successfully", user });
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+
+  // Admin routes
+  app.get("/api/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Subscription routes
+  app.get("/api/subscription", isAuthenticated, (req, res) => {
+    res.json({ subscription: (req.user as any).subscription });
+  });
+
+  app.put("/api/subscription", isAuthenticated, async (req, res) => {
+    try {
+      const { subscription } = req.body;
+      if (!subscription || !["free", "premium"].includes(subscription)) {
+        return res.status(400).json({ message: "Invalid subscription type" });
+      }
+      const user = await storage.updateUserSubscription((req.user as any).id, subscription);
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update subscription" });
+    }
+  });
+
   // Ball recommendation endpoint
-  app.post("/api/recommend-balls", async (req, res) => {
+  app.post("/api/recommend-balls", isAuthenticated, isSubscribed, async (req, res) => {
     try {
       const { patternId, bowlerSpecs, userId } = req.body;
 
