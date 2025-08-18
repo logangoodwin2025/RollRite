@@ -10,8 +10,9 @@ import type { OilPattern } from "@shared/schema";
 export default function OilPatterns() {
   const [activeFilter, setActiveFilter] = useState("all");
   
-  const { data: patterns, isLoading } = useQuery({
+  const { data: patterns, isLoading } = useQuery<OilPattern[]>({
     queryKey: ["/api/patterns"],
+    queryFn: () => fetch("/api/patterns").then((res) => res.json()),
   });
 
   const filterButtons = [

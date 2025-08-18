@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Target, RotateCcw, Trophy, Zap, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
-import type { PerformanceData, BowlingBall, OilPattern } from "../../shared/schema";
+import type { PerformanceData, BowlingBall, OilPattern } from "@shared/schema";
 
 // Mock user ID for demo purposes
 const DEMO_USER_ID = "test-user-1";

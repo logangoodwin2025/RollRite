@@ -1,20 +1,41 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Zap, Search, List, Map, BarChart3, Plus } from "lucide-react";
+import { Menu, X, Zap, Search, List, Map, BarChart3, Plus, Star, User, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/contexts/AuthContext";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { logout } from "@/services/auth";
 
 export function Navigation() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      setLocation("/login");
+    },
+  });
 
   const navItems = [
-    { href: "/", label: "Dashboard", icon: BarChart3 },
-    { href: "/ball-finder", label: "Find Best Ball", icon: Search },
-    { href: "/arsenal", label: "My Arsenal", icon: List },
-    { href: "/oil-patterns", label: "Oil Patterns", icon: Map },
-    { href: "/add-performance", label: "Add Game", icon: Plus },
+    { href: "/", label: "Dashboard", icon: BarChart3, auth: true },
+    { href: "/ball-finder", label: "Find Best Ball", icon: Search, auth: true },
+    { href: "/arsenal", label: "My Arsenal", icon: List, auth: true },
+    { href: "/oil-patterns", label: "Oil Patterns", icon: Map, auth: false },
+    { href: "/add-performance", label: "Add Game", icon: Plus, auth: true },
+    { href: "/subscription", label: "Subscription", icon: Star, auth: true },
   ];
+
+  const adminNavItems = [
+    { href: "/admin", label: "Admin", icon: User, auth: true, admin: true },
+  ];
+
+  const filteredNavItems = navItems.filter(item => !item.auth || isAuthenticated);
+  const filteredAdminNavItems = adminNavItems.filter(item => isAuthenticated && user?.role === 'admin');
 
   const isActive = (href: string) => {
     if (href === "/" && location === "/") return true;
@@ -37,8 +58,8 @@ export function Navigation() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-6">
-            {navItems.map((item) => {
+          <div className="hidden md:flex items-center space-x-6">
+            {filteredNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href}>
@@ -55,6 +76,35 @@ export function Navigation() {
                 </Link>
               );
             })}
+            {filteredAdminNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.href} href={item.href}>
+                  <button
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
+                      isActive(item.href)
+                        ? "text-amber-accent bg-blue-800"
+                        : "hover:text-amber-accent hover:bg-blue-800"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </button>
+                </Link>
+              );
+            })}
+            {isAuthenticated ? (
+              <Button onClick={() => logoutMutation.mutate()} variant="ghost" size="icon" className="text-white">
+                <LogOut className="h-5 w-5" />
+              </Button>
+            ) : (
+              <Link href="/login">
+                <Button variant="ghost" className="text-white">
+                  <LogIn className="h-5 w-5 mr-2" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Navigation */}
@@ -67,7 +117,7 @@ export function Navigation() {
               </SheetTrigger>
               <SheetContent side="right" className="bg-bowling-blue text-white border-blue-800">
                 <div className="flex flex-col space-y-4 mt-8">
-                  {navItems.map((item) => {
+                  {filteredNavItems.map((item) => {
                     const Icon = item.icon;
                     return (
                       <Link key={item.href} href={item.href}>
@@ -85,6 +135,38 @@ export function Navigation() {
                       </Link>
                     );
                   })}
+                  {filteredAdminNavItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <button
+                          onClick={() => setIsOpen(false)}
+                          className={`flex items-center space-x-3 w-full px-3 py-3 rounded-md transition-colors ${
+                            isActive(item.href)
+                              ? "text-amber-accent bg-blue-800"
+                              : "hover:text-amber-accent hover:bg-blue-800"
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                          <span>{item.label}</span>
+                        </button>
+                      </Link>
+                    );
+                  })}
+                  <div className="border-t border-blue-700 my-4" />
+                  {isAuthenticated ? (
+                    <Button onClick={() => { logoutMutation.mutate(); setIsOpen(false); }} variant="ghost" className="text-white justify-start">
+                      <LogOut className="h-5 w-5 mr-3" />
+                      Logout
+                    </Button>
+                  ) : (
+                    <Link href="/login">
+                      <button onClick={() => setIsOpen(false)} className="flex items-center space-x-3 w-full px-3 py-3 rounded-md transition-colors hover:text-amber-accent hover:bg-blue-800">
+                        <LogIn className="h-5 w-5" />
+                        <span>Login</span>
+                      </button>
+                    </Link>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>

@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Link } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Trophy, Award, Target, Route } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import type { OilPattern } from "@shared/schema";
 
 interface BallRecommendation {
   name: string;
@@ -20,14 +23,16 @@ interface BallRecommendation {
 }
 
 export default function BallFinder() {
+  const { user } = useAuth();
   const [selectedPatternId, setSelectedPatternId] = useState<string>("");
   const [speed, setSpeed] = useState([16]);
   const [revRate, setRevRate] = useState([350]);
   const [playingStyle, setPlayingStyle] = useState<string>("");
   const [showResults, setShowResults] = useState(false);
 
-  const { data: patterns, isLoading: patternsLoading } = useQuery({
+  const { data: patterns, isLoading: patternsLoading } = useQuery<OilPattern[]>({
     queryKey: ["/api/patterns"],
+    queryFn: () => fetch("/api/patterns").then((res) => res.json()),
   });
 
   const recommendBalls = useMutation({
@@ -174,14 +179,28 @@ export default function BallFinder() {
           </Card>
 
           {/* Analysis Button */}
-          <Button 
-            onClick={handleAnalysis}
-            disabled={!selectedPatternId || !playingStyle || recommendBalls.isPending}
-            className="w-full bg-bowling-blue hover:bg-blue-800 text-white font-semibold py-3 md:py-4 px-4 md:px-6 text-sm md:text-base"
-          >
-            <Search className="h-4 w-4 mr-2" />
-            {recommendBalls.isPending ? "Analyzing..." : "Run Ball Analysis"}
-          </Button>
+          {user?.subscription === "premium" ? (
+            <Button
+              onClick={handleAnalysis}
+              disabled={!selectedPatternId || !playingStyle || recommendBalls.isPending}
+              className="w-full bg-bowling-blue hover:bg-blue-800 text-white font-semibold py-3 md:py-4 px-4 md:px-6 text-sm md:text-base"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              {recommendBalls.isPending ? "Analyzing..." : "Run Ball Analysis"}
+            </Button>
+          ) : (
+            <Card className="text-center p-4">
+              <CardHeader>
+                <CardTitle>Premium Feature</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Upgrade to a premium subscription to use the Ball Finder.</p>
+                <Link to="/subscription">
+                  <Button className="mt-4">Upgrade</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Results Display */}
